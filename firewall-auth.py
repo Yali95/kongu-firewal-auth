@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-# Copyright (c) 2009 Ajith Kumar and Gokul
+# Copyright (c) 2016 Ajith Kumar and Gokul 
 #
 # Permission is hereby granted, free of charge, to any person
 # obtaining a copy of this software and associated documentation
@@ -36,10 +36,9 @@ import atexit
 import socket
 import gc
 import netrc
-import ssl
+import ssl 
 
 ssl._create_default_https_context = ssl._create_unverified_context
-
 
 class FirewallState:
   Start, LoggedIn, End = range(3)
@@ -135,8 +134,25 @@ def run_state_machine():
       finally:
         conn.close()
 
-  #atexit.register(atexit_logout)
-
+  atexit.register(atexit_logout)
+  
+  try:
+    conn = httplib.HTTPConnection("www.google.com:80") # try 52.42.179.195
+    conn.request("GET", "/")
+    response = conn.getresponse()
+    # 303 leads to the auth page, so it means we're not logged in
+    if (response.status != 303): #already logged in
+      myfile = open("keepalive","r")
+      oldurl=myfile.read()
+      logger = logging.getLogger("FirewallLogger")
+      logger.info("Already Logged in - Trying to continue Auth with old URL : "+oldurl)
+      
+      state=FirewallState.LoggedIn
+      args=[urlparse.urlparse(oldurl)]
+      
+  finally :
+    conn.close()
+        
   while True:
     statefunc = state_functions[state]
     if args is None:
@@ -159,7 +175,7 @@ def login():
   logger = logging.getLogger("FirewallLogger")
   # Find out where to auth
   try:
-    conn = httplib.HTTPConnection("74.125.236.51:80")
+    conn = httplib.HTTPConnection("www.google.com:80") # or try 52.42.179.195
     conn.request("GET", "/")
     response = conn.getresponse()
     # 303 leads to the auth page, so it means we're not logged in
@@ -183,7 +199,7 @@ def login():
     authconn.close()
 
   # Look for the right magic value in the data
-  match = re.search(r"value=\"([0-9a-f]+)\"", data, re.IGNORECASE)
+  match = re.search(r"VALUE=\"([0-9a-f]+)\"", data, re.IGNORECASE)
   magicString = match.group(1)
   logger.debug("The magic string is: " + magicString)
 
@@ -211,7 +227,9 @@ def login():
     return (LoginState.InvalidCredentials, None)
 
   keepaliveURL = keepaliveMatch.group(1)
-
+  myfile = open ("keepalive","w")
+  print >> myfile , keepaliveURL
+  myfile.close()
   logger.info("The keep alive URL is: " + keepaliveURL)
   logger.debug(postData)
   return (LoginState.Successful, urlparse.urlparse(keepaliveURL))
@@ -224,6 +242,7 @@ def keep_alive(url):
   logger.info("Sending request to keep alive.")
   # Connect to the firewall
   try:
+    #print type(url)
     conn = httplib.HTTPSConnection(url.netloc)
     conn.request("GET", url.path + "?" + url.query)
     # This line raises an exception if the URL stops working. We catch it in
@@ -315,3 +334,4 @@ def main(argv = None):
 
 if __name__ == "__main__":
   sys.exit(main())
+
