@@ -11,6 +11,6 @@ You can add **username** and **password** intractively
 
 
 ##Issues:
-  * Not working when already logged in ( __*Logout before running the script*__ )
+  * ~~Not working when already logged in~~
   * Throwing exception randomly
 
