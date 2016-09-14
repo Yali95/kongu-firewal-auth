@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-# Copyright (c) 2009 Siddharth Agarwal
+# Copyright (c) 2009 Ajith Kumar and Gokul
 #
 # Permission is hereby granted, free of charge, to any person
 # obtaining a copy of this software and associated documentation
